@@ -1,6 +1,8 @@
-# mybatis-redis-counter
+# MyBatis Redis Counter
 
 use redis to counting in mybatis, non invasive and easy to use
+
+[中文文档][1]
 
 ### Quick Start
 
@@ -119,3 +121,5 @@ user = userMapper.get(USER_ID);		//another user instance with same id
 Assert.assertEquals(retVal, 11);
 Assert.assertEquals(user.getFollowerCount(), 11);
 ```
+
+[1]: ./zh.md
