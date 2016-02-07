@@ -1,5 +1,6 @@
 package com.scienjus.mrc.interceptor;
 
+import com.scienjus.mrc.annotation.Counter;
 import com.scienjus.mrc.annotation.Id;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
@@ -41,6 +42,10 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
         Field field = clazz.getDeclaredField(fieldName);
         if (field == null || !field.isAnnotationPresent(com.scienjus.mrc.annotation.Field.class) || field.isAnnotationPresent(Id.class)) {
             return proxy.invokeSuper(obj, args);
+        }
+        String alias = field.getAnnotation(com.scienjus.mrc.annotation.Field.class).name();
+        if (alias != null && alias.length() > 0) {
+            fieldName = alias;
         }
         try (Jedis jedis = jedisPool.getResource()) {
             field.setAccessible(true);
@@ -94,8 +99,9 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
             Map<String, String> cache = jedis.hgetAll(redisKey);
             for (Field field : clazz.getDeclaredFields()) {
                 field.setAccessible(true);
-                if (cache.get(field.getName()) != null) {
-                    field.set(to, convert(field.getType(), Long.parseLong(cache.get(field.getName()))));
+                String redisField = getRedisField(field);
+                if (cache.get(redisField) != null) {
+                    field.set(to, convert(field.getType(), Long.parseLong(cache.get(redisField))));
                 } else {
                     field.set(to, field.get(from));
                 }
@@ -106,13 +112,28 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
     }
 
     private static String getRedisKey(Class clazz, Object obj) {
+        Counter annotation = ((Counter) clazz.getAnnotation(Counter.class));
+        String name;
+        if (annotation == null || annotation.name() == null || annotation.name().length() == 0) {
+            name = clazz.getName();
+        } else {
+            name = annotation.name();
+        }
         String id = getId(clazz, obj);
         if (id != null) {
-            return clazz.getName() + "_Counter_" + id;
+            return name + "_Counter_" + id;
         } else {
-            return clazz.getName() + "_Counter";
+            return name + "_Counter";
         }
+    }
 
+    private static String getRedisField(Field field) {
+        com.scienjus.mrc.annotation.Field annotation = field.getAnnotation(com.scienjus.mrc.annotation.Field.class);
+        if (annotation == null || annotation.name() == null || annotation.name().length() == 0) {
+            return field.getName();
+        } else {
+            return annotation.name();
+        }
     }
 
     private static String getId(Class clazz, Object obj) {
