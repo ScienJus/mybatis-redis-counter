@@ -1,6 +1,7 @@
 package com.scienjus.config;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.scienjus.mapper.PostMapper;
 import com.scienjus.mapper.UserMapper;
 import com.scienjus.mrc.interceptor.QueryCounterInterceptor;
 import org.apache.ibatis.plugin.Interceptor;
@@ -57,6 +58,14 @@ public class DataSourceConfig {
     public MapperFactoryBean<UserMapper> userMapper() throws Exception {
         MapperFactoryBean<UserMapper> factory = new MapperFactoryBean<>();
         factory.setMapperInterface(UserMapper.class);
+        factory.setSqlSessionFactory(sqlSessionFactory());
+        return factory;
+    }
+
+    @Bean
+    public MapperFactoryBean<PostMapper> postMapper() throws Exception {
+        MapperFactoryBean<PostMapper> factory = new MapperFactoryBean<>();
+        factory.setMapperInterface(PostMapper.class);
         factory.setSqlSessionFactory(sqlSessionFactory());
         return factory;
     }
