@@ -166,6 +166,30 @@ public class ProxyTest {
         Assert.assertEquals(post2.getViewCount(), 100);
 
     }
+
+    @Test
+    public void incrArgTest() {
+        Post post = getPost(POST_ID);
+        post.setViewCount(100);
+        int retVal = post.incrViewCount(5);
+
+        post = getPost(POST_ID);
+
+        Assert.assertEquals(retVal, 105);
+        Assert.assertEquals(post.getViewCount(), 105);
+    }
+
+    @Test
+    public void decrArgTest() {
+        Post post = getPost(POST_ID);
+        post.setViewCount(100);
+        int retVal = post.decrViewCount(5);
+
+        post = getPost(POST_ID);
+
+        Assert.assertEquals(retVal, 95);
+        Assert.assertEquals(post.getViewCount(), 95);
+    }
     
     public User getUser(int id) {
         session.clearCache();

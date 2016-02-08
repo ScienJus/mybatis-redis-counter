@@ -28,4 +28,12 @@ public class Post {
     public int decrViewCount() {
         return 0;
     }
+
+    public int incrViewCount(int increment) {
+        return 0;
+    }
+
+    public int decrViewCount(int decrement) {
+        return 0;
+    }
 }

@@ -53,19 +53,15 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
             }
         } else {
             int expire = ((Counter) clazz.getAnnotation(Counter.class)).expire();
-            long defaultVal = Long.parseLong(String.valueOf(field.get(obj)));
-            switch (methodType) {
-                case SET:
-                    retVal = doSet(redisKey, redisField, Long.parseLong(args[0].toString()), expire);
-                    break;
-                case INCR:
-                    retVal = doIncr(redisKey, redisField, defaultVal, expire);
-                    break;
-                case DECR:
-                    retVal = doDecr(redisKey, redisField, defaultVal, expire);
-                    break;
-                default:
-                    throw new RuntimeException("MethodType Error");
+            if (methodType == MethodType.SET) {
+                retVal = doSet(redisKey, redisField, Long.parseLong(args[0].toString()), expire);
+            } else {
+                long defaultVal = Long.parseLong(String.valueOf(field.get(obj)));
+                long increment = args.length == 1 ? Long.parseLong(String.valueOf(args[0])) : 1;
+                if (methodType == MethodType.DECR) {
+                    increment = -increment;
+                }
+                retVal = doIncr(redisKey, redisField, defaultVal, increment, expire);
             }
         }
         if (retVal != null) {
@@ -101,31 +97,14 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
         return val;
     }
 
-    private Long doIncr(String key, String field, long defaultVal, int expire) {
+    private Long doIncr(String key, String field, long defaultVal, long increment, int expire) {
         Response<Long> retVal;
         try (Jedis jedis = jedisPool.getResource()) {
             Pipeline p = jedis.pipelined();
             if (!jedis.hexists(key, field)) {
                 p.hset(key, field, String.valueOf(defaultVal));
             }
-            retVal = p.hincrBy(key, field, 1);
-            if (expire > 0) {
-                p.hset(key, UPDATE_AT, now());
-                p.expire(key, expire);
-            }
-            p.sync();
-        }
-        return retVal.get();
-    }
-
-    private Long doDecr(String key, String field, long defaultVal, int expire) {
-        Response<Long> retVal;
-        try (Jedis jedis = jedisPool.getResource()) {
-            Pipeline p = jedis.pipelined();
-            if (!jedis.hexists(key, field)) {
-                p.hset(key, field, String.valueOf(defaultVal));
-            }
-            retVal = p.hincrBy(key, field, -1);
+            retVal = p.hincrBy(key, field, increment);
             if (expire > 0) {
                 p.hset(key, UPDATE_AT, now());
                 p.expire(key, expire);
