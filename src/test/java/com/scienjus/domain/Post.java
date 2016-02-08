@@ -18,7 +18,7 @@ public class Post {
 
     private String title;
 
-    @Field(name = "views")
+    @Field(name = "views", realtime = true)
     private long viewCount;
 
     public int incrViewCount() {

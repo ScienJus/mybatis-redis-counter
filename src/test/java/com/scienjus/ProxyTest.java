@@ -146,8 +146,6 @@ public class ProxyTest {
         Post post = getPost(POST_ID);
         post.setViewCount(100);
 
-        session.clearCache();
-
         post = getPost(POST_ID);
         Assert.assertEquals(post.getViewCount(), 100);
 
@@ -156,6 +154,16 @@ public class ProxyTest {
 
         post = getPost(POST_ID);
         Assert.assertEquals(post.getViewCount(), DEFAULT_VIEW_COUNT);
+
+    }
+
+    @Test
+    public void realtimeTest() {
+        Post post1 = getPost(POST_ID);
+        Post post2 = getPost(POST_ID);
+
+        post1.setViewCount(100);
+        Assert.assertEquals(post2.getViewCount(), 100);
 
     }
     

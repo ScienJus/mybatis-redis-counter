@@ -19,6 +19,8 @@ import java.util.Map;
  */
 public class ProxyCounterInterceptor implements MethodInterceptor {
 
+    private static final String UPDATE_AT = "update_at";
+
     private JedisPool jedisPool;
 
     public ProxyCounterInterceptor(JedisPool jedisPool) {
@@ -43,33 +45,53 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
         field.setAccessible(true);
         String redisKey = getRedisKey(clazz, obj);
         String redisField = getRedisField(field);
-        int expire = ((Counter) clazz.getAnnotation(Counter.class)).expire();
-        long defaultVal = Long.parseLong(String.valueOf(field.get(obj)));
-        long retVal;
-
-        switch (methodType) {
-            case SET:
-                retVal = doSet(redisKey, redisField, Long.parseLong(args[0].toString()), expire);
-                break;
-            case INCR:
-                retVal = doIncr(redisKey, redisField, defaultVal, expire);
-                break;
-            case DECR:
-                retVal = doDecr(redisKey, redisField, defaultVal, expire);
-                break;
-            default:
-                throw new RuntimeException("MethodType Error");
+        Long retVal = null;
+        if (methodType == MethodType.GET) {
+            boolean isRealtime = field.getAnnotation(com.scienjus.mrc.annotation.Field.class).realtime();
+            if (isRealtime) {
+                retVal = doGet(redisKey, redisField);
+            }
+        } else {
+            int expire = ((Counter) clazz.getAnnotation(Counter.class)).expire();
+            long defaultVal = Long.parseLong(String.valueOf(field.get(obj)));
+            switch (methodType) {
+                case SET:
+                    retVal = doSet(redisKey, redisField, Long.parseLong(args[0].toString()), expire);
+                    break;
+                case INCR:
+                    retVal = doIncr(redisKey, redisField, defaultVal, expire);
+                    break;
+                case DECR:
+                    retVal = doDecr(redisKey, redisField, defaultVal, expire);
+                    break;
+                default:
+                    throw new RuntimeException("MethodType Error");
+            }
         }
-        field.set(obj, convert(field.getType(), retVal));
-        return retVal;
+        if (retVal != null) {
+            field.set(obj, convert(field.getType(), retVal));
+            return retVal;
+        } else {
+            return proxy.invokeSuper(obj, args);
+        }
     }
 
-    private long doSet(String key, String field, long val, int expire) {
+    private Long doGet(String key, String field) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            String val = jedis.hget(key, field);
+            if (val != null) {
+                return Long.parseLong(val);
+            }
+            return null;
+        }
+    }
+
+    private Long doSet(String key, String field, long val, int expire) {
         try (Jedis jedis = jedisPool.getResource()) {
             if (expire > 0) {
                 Pipeline p = jedis.pipelined();
                 p.hset(key, field, String.valueOf(val));
-                p.hset(key, "update_at", String.valueOf(System.currentTimeMillis()));
+                p.hset(key, UPDATE_AT, now());
                 p.expire(key, expire);
                 p.sync();
             } else {
@@ -79,7 +101,7 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
         return val;
     }
 
-    private long doIncr(String key, String field, long defaultVal, int expire) {
+    private Long doIncr(String key, String field, long defaultVal, int expire) {
         Response<Long> retVal;
         try (Jedis jedis = jedisPool.getResource()) {
             Pipeline p = jedis.pipelined();
@@ -88,7 +110,7 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
             }
             retVal = p.hincrBy(key, field, 1);
             if (expire > 0) {
-                p.hset(key, "update_at", String.valueOf(System.currentTimeMillis()));
+                p.hset(key, UPDATE_AT, now());
                 p.expire(key, expire);
             }
             p.sync();
@@ -96,7 +118,7 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
         return retVal.get();
     }
 
-    private long doDecr(String key, String field, long defaultVal, int expire) {
+    private Long doDecr(String key, String field, long defaultVal, int expire) {
         Response<Long> retVal;
         try (Jedis jedis = jedisPool.getResource()) {
             Pipeline p = jedis.pipelined();
@@ -105,7 +127,7 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
             }
             retVal = p.hincrBy(key, field, -1);
             if (expire > 0) {
-                p.hset(key, "update_at", String.valueOf(System.currentTimeMillis()));
+                p.hset(key, UPDATE_AT, now());
                 p.expire(key, expire);
             }
             p.sync();
@@ -195,7 +217,12 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
         return fieldName.substring(0, 1).toLowerCase() + fieldName.substring(1);
     }
 
+    private static String now() {
+        return String.valueOf(System.currentTimeMillis());
+    }
+
     private enum MethodType {
+        GET,
         SET,
         INCR,
         DECR;

@@ -94,7 +94,7 @@ public class User {
     private String name;
 
     // means this is a counter field
-    @Field	
+    @Field(name = "followers", realtime = true)
     private int followerCount;
     
     public int setFollowerCount(int followerCount) {
@@ -121,7 +121,7 @@ public class User {
 
 `@Counter`表示这个类需要计数服务，`name`为存储在Redis中的名称（默认为类名），expire为存储在Redis中的生存时间（单位为秒，默认为永久，每次写入操作后都会重置这个时间）
 `@Id`为主键（也可以没有，相当于一个单例对象，但是不支持多个主键）
-`@Field`为需要计数的字段，`name`同样为存储在Redis中的名称（默认为字段名称）
+`@Field`为需要计数的字段，`name`同样为存储在Redis中的名称（默认为字段名称），`realtime`设置为true时，每次调用`getter`方法都会在Redis中查询最新的值，适合对实时性要求非常高，或者对象常驻内存的情况
 
 你可以为这个计数字段添加对应的`setter`、`incrXXX`、`decrXXX`方法，只添加所需的即可，方法的返回值可以是`void`或是字段的类型。
 
@@ -143,7 +143,7 @@ Assert.assertEquals(user.getFollowerCount(), 11);
 ### 待添加功能
 
 - [x] 给对象添加生存时间，你可以不添加，对象就会一直存储在Redis中。也可以添加并定时同步到数据库，这样Redis中就只需要保存热数据，以节约内存空间
-- [ ] 给对象添加实时性选项，实时性高的字段每次调用`getter`时都会去查最新的值，而实时性低的对象只有从MyBatis中读取时会赋值。这只和读取有关，写入依旧是每次都更新，并且只要有写入操作了，对应字段的值也会变成最新的值。
+- [x] 给对象添加实时性选项，实时性高的字段每次调用`getter`时都会去查最新的值，而实时性低的对象只有从MyBatis中读取时会赋值。这只和读取有关，写入依旧是每次都更新，并且只要有写入操作了，对应字段的值也会变成最新的值。
 - [x] 给类添加别名
 - [x] 给字段添加别名
 - [ ] 提供一个不经过MyBatis的方法，只在Redis中维护对象，这样就可以方便的进行一些与数据库数据无关的计数，例如注册数、每日注册数等。也就有了无`@Id`的应用场景

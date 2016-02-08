@@ -12,4 +12,6 @@ import java.lang.annotation.*;
 public @interface Field {
 
     String name() default "";
+
+    boolean realtime() default false;
 }
