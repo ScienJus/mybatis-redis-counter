@@ -16,22 +16,22 @@
 
 ### 快速开始
 
-暂时还没有放在公共的Maven仓库中，所以你只能先Clone下源码然后通过Maven打成Jar包：
-
-```
-git clone https://github.com/ScienJus/mybatis-redis-counter.git
-cd mybatis-redis-counter
-mvn package
-
-mvn install:install-file  
--DgroupId=com.scienjus
--DartifactId=mybatis-redis-counter
--Dversion=1.0-SNAPSHOT
--Dpackaging=jar  
--Dfile=/path/to/jar/mybatis-redis-counter.jar
-```
-
 添加Maven依赖：
+
+仓库：
+
+```
+<repository>
+    <id>scienjus-mvn-repo</id>
+    <url>https://raw.github.com/ScienJus/maven/mvn-repo/</url>
+    <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+    </snapshots>
+</repository>
+```
+
+依赖：
 
 ```
 <dependency>

@@ -6,22 +6,22 @@ use redis to counting in mybatis, non invasive and easy to use
 
 ### Quick Start
 
-Clone and package:
-
-```
-git clone https://github.com/ScienJus/mybatis-redis-counter.git
-cd mybatis-redis-counter
-mvn package
-
-mvn install:install-file  
--DgroupId=com.scienjus
--DartifactId=mybatis-redis-counter
--Dversion=1.0-SNAPSHOT
--Dpackaging=jar  
--Dfile=/path/to/jar/mybatis-redis-counter.jar
-```
-
 Add the Maven dependency:
+
+repository:
+
+```
+<repository>
+    <id>scienjus-mvn-repo</id>
+    <url>https://raw.github.com/ScienJus/maven/mvn-repo/</url>
+    <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+    </snapshots>
+</repository>
+```
+
+dependency:
 
 ```
 <dependency>

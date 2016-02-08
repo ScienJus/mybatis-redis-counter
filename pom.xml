@@ -15,7 +15,6 @@
   </properties>
 
   <dependencies>
-
     <dependency>
       <groupId>redis.clients</groupId>
       <artifactId>jedis</artifactId>
@@ -90,7 +89,6 @@
       <version>4.12</version>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
   <build>
