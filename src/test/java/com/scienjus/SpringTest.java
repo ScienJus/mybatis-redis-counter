@@ -33,6 +33,8 @@ public class SpringTest {
 
     private static final int DEFAULT_VIEW_COUNT = 5;
 
+    private static final double DEFAULT_SCORE = 10.1;
+
     @Before
     public void beforeTest() {
         userMapper.delAll();
@@ -47,6 +49,7 @@ public class SpringTest {
         post.setId(POST_ID);
         post.setTitle("Counter");
         post.setViewCount(DEFAULT_VIEW_COUNT);
+        post.setScore(DEFAULT_SCORE);
         postMapper.insert(post);
     }
 

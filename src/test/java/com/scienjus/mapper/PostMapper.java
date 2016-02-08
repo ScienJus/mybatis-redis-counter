@@ -17,7 +17,7 @@ public interface PostMapper {
     @Select("select * from post where id = #{id}")
     Post get(String id);
 
-    @Insert("insert into post(id, title, view_count) values(#{id}, #{title}, #{viewCount})")
+    @Insert("insert into post(id, title, view_count, score) values(#{id}, #{title}, #{viewCount}, #{score})")
     void insert(Post post);
 
     @Delete("delete from post")

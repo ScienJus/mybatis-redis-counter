@@ -21,6 +21,9 @@ public class Post {
     @Field(name = "views", realtime = true)
     private long viewCount;
 
+    @Field
+    private double score;
+
     public int incrViewCount() {
         return 0;
     }
@@ -35,5 +38,21 @@ public class Post {
 
     public int decrViewCount(int decrement) {
         return 0;
+    }
+
+    public double incrScore() {
+        return 0D;
+    }
+
+    public double decrScore() {
+        return 0D;
+    }
+
+    public double incrScore(double incrment) {
+        return 0D;
+    }
+
+    public double decrScore(double decrement) {
+        return 0D;
     }
 }

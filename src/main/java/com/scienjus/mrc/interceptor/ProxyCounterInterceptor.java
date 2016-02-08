@@ -45,7 +45,7 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
         field.setAccessible(true);
         String redisKey = getRedisKey(clazz, obj);
         String redisField = getRedisField(field);
-        Long retVal = null;
+        Double retVal = null;
         if (methodType == MethodType.GET) {
             boolean isRealtime = field.getAnnotation(com.scienjus.mrc.annotation.Field.class).realtime();
             if (isRealtime) {
@@ -54,10 +54,10 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
         } else {
             int expire = ((Counter) clazz.getAnnotation(Counter.class)).expire();
             if (methodType == MethodType.SET) {
-                retVal = doSet(redisKey, redisField, Long.parseLong(args[0].toString()), expire);
+                retVal = doSet(redisKey, redisField, objToDouble(args[0]), expire);
             } else {
-                long defaultVal = Long.parseLong(String.valueOf(field.get(obj)));
-                long increment = args.length == 1 ? Long.parseLong(String.valueOf(args[0])) : 1;
+                double defaultVal = objToDouble(field.get(obj));
+                double increment = args.length == 1 ? objToDouble(args[0]) : 1;
                 if (methodType == MethodType.DECR) {
                     increment = -increment;
                 }
@@ -72,17 +72,17 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
         }
     }
 
-    private Long doGet(String key, String field) {
+    private Double doGet(String key, String field) {
         try (Jedis jedis = jedisPool.getResource()) {
             String val = jedis.hget(key, field);
             if (val != null) {
-                return Long.parseLong(val);
+                return objToDouble(val);
             }
             return null;
         }
     }
 
-    private Long doSet(String key, String field, long val, int expire) {
+    private Double doSet(String key, String field, double val, int expire) {
         try (Jedis jedis = jedisPool.getResource()) {
             if (expire > 0) {
                 Pipeline p = jedis.pipelined();
@@ -97,14 +97,14 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
         return val;
     }
 
-    private Long doIncr(String key, String field, long defaultVal, long increment, int expire) {
-        Response<Long> retVal;
+    private Double doIncr(String key, String field, double defaultVal, double increment, int expire) {
+        Response<Double> retVal;
         try (Jedis jedis = jedisPool.getResource()) {
             Pipeline p = jedis.pipelined();
             if (!jedis.hexists(key, field)) {
                 p.hset(key, field, String.valueOf(defaultVal));
             }
-            retVal = p.hincrBy(key, field, increment);
+            retVal = p.hincrByFloat(key, field, increment);
             if (expire > 0) {
                 p.hset(key, UPDATE_AT, now());
                 p.expire(key, expire);
@@ -114,7 +114,7 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
         return retVal.get();
     }
 
-    private static Object convert(Class<?> clazz, Long val) {
+    private static Object convert(Class<?> clazz, Double val) {
         if (clazz.isAssignableFrom(String.class)) {
             return val.toString();
         } else if (clazz.isAssignableFrom(Byte.TYPE) || clazz.isAssignableFrom(Byte.class)) {
@@ -124,13 +124,13 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
         } else if (clazz.isAssignableFrom(Integer.TYPE) || clazz.isAssignableFrom(Integer.class)) {
             return val.intValue();
         } else if (clazz.isAssignableFrom(Long.TYPE) || clazz.isAssignableFrom(Long.class)) {
-            return val;
+            return val.longValue();
         } else if (clazz.isAssignableFrom(Float.TYPE) || clazz.isAssignableFrom(Float.class)) {
             return val.floatValue();
         } else if (clazz.isAssignableFrom(Double.TYPE) || clazz.isAssignableFrom(Double.class)) {
-            return val.doubleValue();
+            return val;
         }
-        throw new NumberFormatException("counter Long value can not convert to " + clazz.getName());
+        throw new NumberFormatException("counter Double value can not convert to " + clazz.getName());
     }
 
     public void clone(Object from, Object to) {
@@ -142,7 +142,7 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
                 field.setAccessible(true);
                 String redisField = getRedisField(field);
                 if (cache.get(redisField) != null) {
-                    field.set(to, convert(field.getType(), Long.parseLong(cache.get(redisField))));
+                    field.set(to, convert(field.getType(), objToDouble(cache.get(redisField))));
                 } else {
                     field.set(to, field.get(from));
                 }
@@ -198,6 +198,10 @@ public class ProxyCounterInterceptor implements MethodInterceptor {
 
     private static String now() {
         return String.valueOf(System.currentTimeMillis());
+    }
+
+    private static Double objToDouble(Object obj) {
+        return Double.parseDouble(String.valueOf(obj));
     }
 
     private enum MethodType {

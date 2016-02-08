@@ -35,6 +35,8 @@ public class ProxyTest {
 
     private static final int DEFAULT_VIEW_COUNT = 5;
 
+    private static final double DEFAULT_SCORE = 10.1;
+
     @BeforeClass
     public static void before() {
         DruidDataSource dataSource = new DruidDataSource();
@@ -80,6 +82,7 @@ public class ProxyTest {
         post.setId(POST_ID);
         post.setTitle("Counter");
         post.setViewCount(DEFAULT_VIEW_COUNT);
+        post.setScore(DEFAULT_SCORE);
         postMapper.insert(post);
     }
 
@@ -189,6 +192,16 @@ public class ProxyTest {
 
         Assert.assertEquals(retVal, 95);
         Assert.assertEquals(post.getViewCount(), 95);
+    }
+
+
+    @Test
+    public void doubleIncrTest() {
+        Post post = getPost(POST_ID);
+        double retVal = post.incrScore(0.05);
+
+        Assert.assertEquals(retVal, DEFAULT_SCORE + 0.05, 0.0001);
+        Assert.assertEquals(retVal, DEFAULT_SCORE + 0.05, 0.0001);
     }
     
     public User getUser(int id) {
