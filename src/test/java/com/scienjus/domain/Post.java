@@ -9,7 +9,7 @@ import lombok.Data;
  * @author xieenlong
  * @date 16/2/7.
  */
-@Counter(name = "Post")
+@Counter(name = "Post", expire = 3)
 @Data
 public class Post {
 

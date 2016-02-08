@@ -33,6 +33,8 @@ public class ProxyTest {
 
     private static final String POST_ID = "A";
 
+    private static final int DEFAULT_VIEW_COUNT = 5;
+
     @BeforeClass
     public static void before() {
         DruidDataSource dataSource = new DruidDataSource();
@@ -59,7 +61,6 @@ public class ProxyTest {
 
         SqlSessionFactoryBuilder builder = new SqlSessionFactoryBuilder();
         SqlSessionFactory factory = builder.build(configuration);
-
         session = factory.openSession();
         userMapper = session.getMapper(UserMapper.class);
         postMapper = session.getMapper(PostMapper.class);
@@ -68,7 +69,6 @@ public class ProxyTest {
     @Before
     public void beforeTest() {
         userMapper.delAll();
-
         User user = new User();
         user.setId(USER_ID);
         user.setName("ScienJus");
@@ -79,27 +79,27 @@ public class ProxyTest {
         Post post = new Post();
         post.setId(POST_ID);
         post.setTitle("Counter");
-        post.setViewCount(0);
+        post.setViewCount(DEFAULT_VIEW_COUNT);
         postMapper.insert(post);
     }
 
     @Test
     public void setterTest() {
-        User user = userMapper.get(USER_ID);
+        User user = getUser(USER_ID);
         user.setFollowerCount(10);
 
-        user = userMapper.get(USER_ID);
+        user = getUser(USER_ID);
 
         Assert.assertEquals(user.getFollowerCount(), 10);
     }
 
     @Test
     public void incrTest() {
-        User user = userMapper.get(USER_ID);
+        User user = getUser(USER_ID);
         user.setFollowerCount(10);
         int retVal = user.incrFollowerCount();
 
-        user = userMapper.get(USER_ID);
+        user = getUser(USER_ID);
 
         Assert.assertEquals(retVal, 11);
         Assert.assertEquals(user.getFollowerCount(), 11);
@@ -107,11 +107,11 @@ public class ProxyTest {
 
     @Test
     public void decrTest() {
-        User user = userMapper.get(USER_ID);
+        User user = getUser(USER_ID);
         user.setFollowerCount(10);
         int retVal = user.decrFollowerCount();
 
-        user = userMapper.get(USER_ID);
+        user = getUser(USER_ID);
 
         Assert.assertEquals(retVal, 9);
         Assert.assertEquals(user.getFollowerCount(), 9);
@@ -119,7 +119,7 @@ public class ProxyTest {
 
     @Test
     public void listTest() {
-        User user = userMapper.get(USER_ID);
+        User user = getUser(USER_ID);
         user.setFollowerCount(10);
         int retVal = user.decrFollowerCount();
 
@@ -131,14 +131,42 @@ public class ProxyTest {
 
     @Test
     public void aliasTest() {
-        Post post = postMapper.get(POST_ID);
+        Post post = getPost(POST_ID);
         post.setViewCount(100);
         int retVal = post.incrViewCount();
 
-        post = postMapper.get(POST_ID);
+        post = getPost(POST_ID);
 
         Assert.assertEquals(retVal, 101);
         Assert.assertEquals(post.getViewCount(), 101);
+    }
+
+    @Test
+    public void expireTest() throws InterruptedException {
+        Post post = getPost(POST_ID);
+        post.setViewCount(100);
+
+        session.clearCache();
+
+        post = getPost(POST_ID);
+        Assert.assertEquals(post.getViewCount(), 100);
+
+        Thread.sleep(5000);
+        session.clearCache();
+
+        post = getPost(POST_ID);
+        Assert.assertEquals(post.getViewCount(), DEFAULT_VIEW_COUNT);
+
+    }
+    
+    public User getUser(int id) {
+        session.clearCache();
+        return userMapper.get(id);
+    }
+
+    public Post getPost(String id) {
+        session.clearCache();
+        return postMapper.get(id);
     }
 
     @AfterClass

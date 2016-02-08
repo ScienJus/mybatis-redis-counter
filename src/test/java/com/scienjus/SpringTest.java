@@ -1,9 +1,12 @@
 package com.scienjus;
 
 import com.scienjus.config.DataSourceConfig;
+import com.scienjus.domain.Post;
 import com.scienjus.domain.User;
+import com.scienjus.mapper.PostMapper;
 import com.scienjus.mapper.UserMapper;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +24,31 @@ public class SpringTest {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private PostMapper postMapper;
+
     private static final int USER_ID = 1;
+
+    private static final String POST_ID = "A";
+
+    private static final int DEFAULT_VIEW_COUNT = 5;
+
+    @Before
+    public void beforeTest() {
+        userMapper.delAll();
+        User user = new User();
+        user.setId(USER_ID);
+        user.setName("ScienJus");
+        user.setFollowerCount(0);
+        userMapper.insert(user);
+
+        postMapper.delAll();
+        Post post = new Post();
+        post.setId(POST_ID);
+        post.setTitle("Counter");
+        post.setViewCount(DEFAULT_VIEW_COUNT);
+        postMapper.insert(post);
+    }
 
     @Test
     public void setterTest() {
@@ -55,5 +82,20 @@ public class SpringTest {
 
         Assert.assertEquals(retVal, 9);
         Assert.assertEquals(user.getFollowerCount(), 9);
+    }
+
+    @Test
+    public void expireTest() throws InterruptedException {
+        Post post = postMapper.get(POST_ID);
+        post.setViewCount(100);
+
+        post = postMapper.get(POST_ID);
+        Assert.assertEquals(post.getViewCount(), 100);
+
+        Thread.sleep(5000);
+
+        post = postMapper.get(POST_ID);
+        Assert.assertEquals(post.getViewCount(), DEFAULT_VIEW_COUNT);
+
     }
 }

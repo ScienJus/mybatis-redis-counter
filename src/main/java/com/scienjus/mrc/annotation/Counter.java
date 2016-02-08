@@ -12,4 +12,6 @@ import java.lang.annotation.*;
 public @interface Counter {
 
     String name() default "";
+
+    int expire() default 0;
 }
