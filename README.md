@@ -13,7 +13,7 @@ repository:
 ```
 <repository>
     <id>scienjus-mvn-repo</id>
-    <url>https://raw.github.com/ScienJus/maven/mvn-repo/</url>
+    <url>https://raw.github.com/ScienJus/maven/snapshot/</url>
     <snapshots>
         <enabled>true</enabled>
         <updatePolicy>always</updatePolicy>
